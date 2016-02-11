@@ -39,7 +39,8 @@ public class SpriteView extends View {
     private boolean paused = false;
     private List<Point> framePositions;
     private Map<String, int[]> animations;
-
+    private Rect src;
+    private Rect dst;
 
     public SpriteView(Context context) {
         super(context);
@@ -83,6 +84,8 @@ public class SpriteView extends View {
         an ArrayList wich will be used to iterate over frames.
      */
     private void initSpriteView() {
+        src = new Rect(0, 0, frameWidth, frameHeight);
+        dst = new Rect(0, 0, frameWidth, frameHeight);
         framePositions = new ArrayList<>();
         int x = 0;
         int y = 0;
@@ -152,8 +155,7 @@ public class SpriteView extends View {
         Point p = framePositions.get(currentFrame);
         int srcX = p.x;
         int srcY = p.y;
-        Rect src = new Rect(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
-        Rect dst = new Rect(0, 0, frameWidth, frameHeight);
+        src.set(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
         canvas.drawBitmap(mBitmap, src, dst, null);
         invalidate();
     }

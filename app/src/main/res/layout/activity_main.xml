@@ -7,7 +7,7 @@
 
     tools:context="octobite.com.br.spriteview.MainActivity">
 
-    <octobite.com.br.spriteview.views.SpriteView
+    <br.com.octobite.spritelib.SpriteView
         android:id="@+id/sprite_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -18,7 +18,6 @@
         app:fps="8"
         app:image="@drawable/sprite"
         app:rows="4" />
-
 
     <Button
         android:id="@+id/start"
