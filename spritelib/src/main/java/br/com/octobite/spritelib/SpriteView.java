@@ -8,6 +8,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.support.v4.content.res.ResourcesCompat;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -26,24 +27,31 @@ public class SpriteView extends View {
 
     public static String DEFAULT_ANIMATION = "default";
 
-    private Bitmap mBitmap;
-    private Loop mLoop;
-    private int frameWidth;
-    private int frameHeight;
-    private int currentFrame = 0;
-    private int rows;
-    private int columns;
-    private int framesPerSecond = 10;
-    private int[] currentAnimation;
-    private boolean animating = false;
-    private boolean paused = false;
-    private List<Point> framePositions;
-    private Map<String, int[]> animations;
-    private Rect src;
-    private Rect dst;
+    private Bitmap mBitmap; //The bitmap (spritesheet)
+    private Loop mLoop; //runnable tha holds the animation loop
+    private int frameWidth; //the widht of one frame. Also the width of the view
+    private int frameHeight;//the height of one frame. Also the height of the view
+    private int currentFrame; //the actual frame that is being showed
+    private int rows; //number of rows of the spritesheet
+    private int columns; //number of columns of the spritesheet
+    private int framesPerSecond = 10; //the actualization tax
+    private int[] currentAnimation; //the current animation(sequence of frames) that is being showed
+    private boolean isAnimating = false; //to control the loop
 
+    private List<Point> framePositions; //points that map the spritesheet x,y positions
+    private Map<String, int[]> animations; //map with all frame animations represented by a name
+    private Rect src; // Rect to extract the frame from the source image
+    private Rect dst; //rect to draw the frame
+    private String animationInMemory; //Hold the animation that should be played next
+    private boolean isPlayingOnce = false;
+    private int nextFrameToPlay = 0;
+    private boolean isCycleStarting = true;
+    private boolean stopAfterPlay = false;
+
+    //Constructors
     public SpriteView(Context context) {
         super(context);
+
         initSpriteView();
     }
 
@@ -55,6 +63,7 @@ public class SpriteView extends View {
         columns = a.getInt(R.styleable.SpriteView_columns, 4);
 
         int fps = a.getInt(R.styleable.SpriteView_fps, 12);
+
         setFPS(fps);
         Drawable drawable = a.getDrawable(R.styleable.SpriteView_image);
         if (drawable != null) {
@@ -62,6 +71,7 @@ public class SpriteView extends View {
         }
         frameWidth = mBitmap.getWidth() / columns;
         frameHeight = mBitmap.getHeight() / rows;
+        a.recycle();
         initSpriteView();
     }
 
@@ -69,14 +79,7 @@ public class SpriteView extends View {
         super(context, attrs, defStyleAttr);
         initSpriteView();
     }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        getLayoutParams().width = frameWidth;
-        getLayoutParams().height = frameHeight;//dpToPx(frameHeight, getContext());
-
-    }
+    //----
 
     /*
         initiate the components and set the default animation.
@@ -87,6 +90,14 @@ public class SpriteView extends View {
         src = new Rect(0, 0, frameWidth, frameHeight);
         dst = new Rect(0, 0, frameWidth, frameHeight);
         framePositions = new ArrayList<>();
+        mapFrames();
+        createDefaultAnimation();
+    }
+
+    /*
+        create the map of the x,y positions
+     */
+    private void mapFrames() {
         int x = 0;
         int y = 0;
         for (int i = 0; i < rows; i++) {
@@ -98,9 +109,11 @@ public class SpriteView extends View {
             x = 0;
             y += frameHeight;
         }
+    }
 
+    //Create a default animation, wich is composed of all frames.
+    private void createDefaultAnimation() {
         animations = new HashMap<>();
-
         int[] defAnimation = new int[framePositions.size()];
         for (int i = 0; i <= framePositions.size() - 1; i++) {
             defAnimation[i] = i;
@@ -110,6 +123,47 @@ public class SpriteView extends View {
         currentAnimation = animations.get(DEFAULT_ANIMATION);
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        getLayoutParams().width = frameWidth;
+        getLayoutParams().height = frameHeight;//dpToPx(frameHeight, getContext());
+
+    }
+
+    /**
+     * Set the spritesheet.
+     * Use this method to initialize the view if you are creating this programatically or
+     * If you need to change the sprite sheet at runtime, call this method.
+     * If the animation is running, it will be stoped, and you will need to call @startAnim() again
+     * <p>
+     * Remember to call @setFPS() if you need to change the speed of the animation
+     *
+     * @param drawableId
+     * @param rows
+     * @param columns
+     */
+    public void setSpriteSheet(int drawableId, int rows, int columns) {
+        //We stop the animations to avoid problems, becouse in this case, all parameter could change
+        if (isAnimating) {
+            stopAnim();
+        }
+        Drawable mDrawable = ResourcesCompat.getDrawable(getResources(), drawableId, null);
+        if (mDrawable != null) {
+            mBitmap = ((BitmapDrawable) mDrawable).getBitmap();
+            this.rows = rows;
+            this.columns = columns;
+            frameWidth = mBitmap.getWidth() / columns;
+            frameHeight = mBitmap.getHeight() / rows;
+            mapFrames();
+            createDefaultAnimation();
+        } else {
+            throw new NullPointerException("Drawable resource not found");
+        }
+
+    }
+
+
     /**
      * If you are playing animations when call it, remember to start animations again
      *
@@ -117,7 +171,7 @@ public class SpriteView extends View {
      */
     public void setDefaultAnimation(int[] frames) {
         //We cant change default animation wile playing
-        if (animating) {
+        if (isAnimating) {
             stopAnim();
         }
         animations.remove(DEFAULT_ANIMATION);
@@ -135,13 +189,13 @@ public class SpriteView extends View {
     }
 
     /**
-     * if we are not animating, then we can set a frame do be displayed
+     * if we are not isAnimating, then we can set a frame do be displayed
      *
      * @param frame
      */
 
     public void setFrame(int frame) {
-        if (!animating) {
+        if (!isAnimating) {
             if (frame < framePositions.size()) {
                 currentFrame = frame;
             }
@@ -149,22 +203,14 @@ public class SpriteView extends View {
     }
 
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        Point p = framePositions.get(currentFrame);
-        int srcX = p.x;
-        int srcY = p.y;
-        src.set(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
-        canvas.drawBitmap(mBitmap, src, dst, null);
-        invalidate();
-    }
-
     /**
      * Start the animation
      */
     public void startAnim() {
-        animating = true;
+        isAnimating = true;
+        isCycleStarting = true;
+        nextFrameToPlay = 0;
+
         if (mLoop == null) {
             mLoop = new Loop(this);
             new Thread(mLoop).start();
@@ -176,34 +222,11 @@ public class SpriteView extends View {
      */
     public void stopAnim() {
         playAnimation("default");
-        animating = false;
+        isAnimating = false;
         setFrame(0);
         mLoop = null;
     }
 
-
-    private int nextFrameToPlay = 0;
-
-    private boolean startCicle = true;
-
-    private void playNextFrame() {
-
-        currentFrame = currentAnimation[nextFrameToPlay];
-        nextFrameToPlay++;
-        if (startCicle) {
-            startCicle = false;
-            if (isPlayingOnce) {
-                isPlayingOnce = false;
-                playAnimation(animationInMemory);
-            }
-        }
-        if (nextFrameToPlay > currentAnimation.length - 1) {
-            nextFrameToPlay = 0;
-            startCicle = true;
-        }
-
-
-    }
 
     /**
      * Add a new set of animation to the animation state machine
@@ -221,25 +244,84 @@ public class SpriteView extends View {
      * @param animationName
      */
     public void playAnimation(String animationName) {
-        paused = true;
-        currentAnimation = animations.get(animationName);
-        nextFrameToPlay = 0;
-        paused = false;
+        if (mLoop == null) {
+            currentAnimation = animations.get(animationName);
+            startAnim();
+        } else {
+            mLoop.pause();
+            currentAnimation = animations.get(animationName);
+            nextFrameToPlay = 0;
+            mLoop.unPause();
+        }
     }
 
-    private String animationInMemory;
-    boolean isPlayingOnce = false;
 
-
-    public void playAnimarionOnce(String animationName, String animationAfter) {
-        paused = true;
+    /**
+     * This method call an animation to be played only one cycle (not in loop)
+     * The first param, is the animation to be played. The second one is the animation to be played after the first one
+     * The second animation will be played in loop.
+     * The general use, is to play a single animation then change to default animation.
+     * If you pass a null value to the animationAfter param, the animation will stop on the first frame of the default
+     *
+     * @param animationName
+     * @param animationAfter
+     */
+    public void playAnimationOnce(String animationName, String animationAfter) {
+        if (mLoop == null) {
+            startAnim();
+        }
+        mLoop.pause();
+        if (animationAfter == null) {
+            stopAfterPlay = true;
+        }
         animationInMemory = animationAfter;
         currentAnimation = animations.get(animationName);
         nextFrameToPlay = 0;
         isPlayingOnce = true;
-        paused = false;
+        mLoop.unPause();
+    }
+
+
+    /*
+        Update the frames to be played
+     */
+    private void playNextFrame() {
+        if (nextFrameToPlay > currentAnimation.length - 1) {
+            nextFrameToPlay = 0;
+            isCycleStarting = true;
+        }
+        currentFrame = currentAnimation[nextFrameToPlay];
+        nextFrameToPlay++;
+        if (isCycleStarting) {
+            isCycleStarting = false;
+            if (isPlayingOnce) {
+                isPlayingOnce = false;
+                if (stopAfterPlay) {
+                    stopAfterPlay = false;
+                    stopAnim();
+                } else {
+                    playAnimation(animationInMemory);
+                    animationInMemory = null; //To save memory
+                }
+
+            }
+        }
+
 
     }
+
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+        Point p = framePositions.get(currentFrame);
+        int srcX = p.x;
+        int srcY = p.y;
+        src.set(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
+        canvas.drawBitmap(mBitmap, src, dst, null);
+        invalidate();
+    }
+
 
     /*
      * Our loop
@@ -249,6 +331,7 @@ public class SpriteView extends View {
 
         private SpriteView sView;
         private long startTime;
+        private boolean paused = false;
 
 
         Loop(SpriteView sView) {
@@ -258,7 +341,7 @@ public class SpriteView extends View {
         @Override
         public void run() {
             startTime = System.currentTimeMillis();
-            while (animating) {
+            while (isAnimating) {
                 if (!paused) {
                     long now = System.currentTimeMillis();
                     if (now > startTime + framesPerSecond) {
@@ -267,6 +350,15 @@ public class SpriteView extends View {
                     }
                 }
             }
+        }
+
+        public void pause() {
+            paused = true;
+        }
+
+        public void unPause() {
+            paused = false;
+            startTime = System.currentTimeMillis();
         }
     }
 
