@@ -54,11 +54,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void playLeftAnim(View v) {
-        mSView.playAnimarionOnce("left", SpriteView.DEFAULT_ANIMATION);
+        mSView.playAnimationOnce("left", SpriteView.DEFAULT_ANIMATION);
     }
 
     public void playBackAnim(View v) {
-        mSView.playAnimarionOnce("back", "left");
+        mSView.playAnimationOnce("back", "left");
     }
 
     public void playRightAnim(View v) {
