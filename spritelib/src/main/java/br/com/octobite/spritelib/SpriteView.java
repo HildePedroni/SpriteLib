@@ -12,6 +12,7 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -235,6 +236,9 @@ public class SpriteView extends View {
      * @param frames
      */
     public void addAnimation(String animationName, int[] frames) {
+        if (animationName.equals(DEFAULT_ANIMATION)) {
+            throw new InvalidParameterException("Name 'default' is not allowed, use setDefaultAnimation(int[] frames) to set default animation");
+        }
         animations.put(animationName, frames);
     }
 
