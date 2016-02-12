@@ -137,7 +137,7 @@ public class SpriteView extends View {
      * Use this method to initialize the view if you are creating this programatically or
      * If you need to change the sprite sheet at runtime, call this method.
      * If the animation is running, it will be stoped, and you will need to call @startAnim() again
-     * <p>
+     * <p/>
      * Remember to call @setFPS() if you need to change the speed of the animation
      *
      * @param drawableId
@@ -294,8 +294,7 @@ public class SpriteView extends View {
             nextFrameToPlay = 0;
             isCycleStarting = true;
         }
-        currentFrame = currentAnimation[nextFrameToPlay];
-        nextFrameToPlay++;
+
         if (isCycleStarting) {
             isCycleStarting = false;
             if (isPlayingOnce) {
@@ -310,6 +309,8 @@ public class SpriteView extends View {
 
             }
         }
+        currentFrame = currentAnimation[nextFrameToPlay];
+        nextFrameToPlay++;
 
 
     }
