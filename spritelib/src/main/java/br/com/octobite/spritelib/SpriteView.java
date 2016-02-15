@@ -61,7 +61,7 @@ public class SpriteView extends View {
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.SpriteView);
 
         rows = a.getInt(R.styleable.SpriteView_rows, 1);
-        columns = a.getInt(R.styleable.SpriteView_columns, 4);
+        columns = a.getInt(R.styleable.SpriteView_columns, 1);
 
         int fps = a.getInt(R.styleable.SpriteView_fps, 12);
 
@@ -69,9 +69,9 @@ public class SpriteView extends View {
         Drawable drawable = a.getDrawable(R.styleable.SpriteView_image);
         if (drawable != null) {
             mBitmap = ((BitmapDrawable) drawable).getBitmap();
+            frameWidth = mBitmap.getWidth() / columns;
+            frameHeight = mBitmap.getHeight() / rows;
         }
-        frameWidth = mBitmap.getWidth() / columns;
-        frameHeight = mBitmap.getHeight() / rows;
         a.recycle();
         initSpriteView();
     }
@@ -88,11 +88,26 @@ public class SpriteView extends View {
         an ArrayList wich will be used to iterate over frames.
      */
     private void initSpriteView() {
-        src = new Rect(0, 0, frameWidth, frameHeight);
-        dst = new Rect(0, 0, frameWidth, frameHeight);
         framePositions = new ArrayList<>();
         mapFrames();
         createDefaultAnimation();
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        if (src == null) {
+            src = new Rect(0, 0, frameWidth, frameHeight);
+            dst = new Rect(0, 0, getWidth(), getHeight());
+        }
+
+        Point p = framePositions.get(currentFrame);
+        int srcX = p.x;
+        int srcY = p.y;
+        src.set(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
+        canvas.drawBitmap(mBitmap, src, dst, null);
+        invalidate();
     }
 
     /*
@@ -122,14 +137,6 @@ public class SpriteView extends View {
         //set default animation
         animations.put(DEFAULT_ANIMATION, defAnimation);
         currentAnimation = animations.get(DEFAULT_ANIMATION);
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        getLayoutParams().width = frameWidth;
-        getLayoutParams().height = frameHeight;//dpToPx(frameHeight, getContext());
-
     }
 
     /**
@@ -314,19 +321,6 @@ public class SpriteView extends View {
 
 
     }
-
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        Point p = framePositions.get(currentFrame);
-        int srcX = p.x;
-        int srcY = p.y;
-        src.set(srcX, srcY, srcX + frameWidth, srcY + frameHeight);
-        canvas.drawBitmap(mBitmap, src, dst, null);
-        invalidate();
-    }
-
 
     /*
      * Our loop
