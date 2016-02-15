@@ -1,7 +1,9 @@
 package octobite.com.br.spriteview;
 
+import android.app.ActivityManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 
 import br.com.octobite.spritelib.SpriteView;
@@ -9,7 +11,7 @@ import br.com.octobite.spritelib.SpriteView;
 
 public class MainActivity extends AppCompatActivity {
 
-
+    private static String TAG = "SpriteView";
     private SpriteView mSView;
 
     @Override
@@ -18,17 +20,28 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         mSView = (SpriteView) findViewById(R.id.sprite_view);
 
-        int[] frontAnim = new int[]{0, 1, 2, 3};
-        int[] leftAnim = new int[]{4, 5, 6, 7};
-        int[] backAnim = new int[]{8, 9, 10, 11};
-        int[] rightAnim = new int[]{12, 13, 14, 15};
+
+        int[] animDef = new int[]{0, 1, 2, 3, 4};
+        int[] pegaRadio = new int[]{5, 6, 7, 8, 9};
+        int[] guardaRadio = new int[]{9, 8, 7, 6, 5};
+        int[] talkAudio = new int[]{10, 11, 12, 13, 14};
+        int[] vitoria = new int[]{15, 16, 17, 18, 19};
+        int[] derrota = new int[]{20, 21, 22, 23, 24};
 
 
-        mSView.addAnimation("front", frontAnim);
-        mSView.addAnimation("left", leftAnim);
-        mSView.addAnimation("back", backAnim);
-        mSView.addAnimation("right", rightAnim);
-        mSView.setDefaultAnimation(frontAnim);
+        ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(memoryInfo);
+
+        long mem = memoryInfo.availMem;
+        Log.d(TAG, "Memory available " + (mem / 1048576L));
+
+        mSView.addAnimation("pegaRadio", pegaRadio);
+        mSView.addAnimation("guardaRadio", guardaRadio);
+        mSView.addAnimation("audioAtivo", talkAudio);
+        mSView.addAnimation("vitoria", vitoria);
+        mSView.addAnimation("derrota", derrota);
+        mSView.setDefaultAnimation(animDef);
         mSView.startAnim();
     }
 
@@ -40,29 +53,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void startAnim(View v) {
-        mSView.startAnim();
+    public void pegaRadio(View v) {
+
+        mSView.playAnimationOnce("pegaRadio", "audioAtivo");
     }
 
-    public void stopAnim(View v) {
-        mSView.stopAnim();
+    public void guardaRadio(View v) {
+        mSView.playAnimationOnce("guardaRadio", SpriteView.DEFAULT_ANIMATION);
 
     }
 
-    public void playFrontAnim(View v) {
-        mSView.playAnimation("front");
+    public void playVitoria(View v) {
+
+        mSView.playAnimationOnce("vitoria", SpriteView.DEFAULT_ANIMATION);
     }
 
-    public void playLeftAnim(View v) {
-        mSView.playAnimationOnce("left", SpriteView.DEFAULT_ANIMATION);
+    public void playDerrota(View v) {
+        mSView.playAnimationOnce("derrota", SpriteView.DEFAULT_ANIMATION);
     }
 
-    public void playBackAnim(View v) {
-        mSView.playAnimationOnce("back", "left");
-    }
-
-    public void playRightAnim(View v) {
-        mSView.playAnimation("right");
-    }
 
 }

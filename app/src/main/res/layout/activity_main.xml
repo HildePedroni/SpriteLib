@@ -4,70 +4,65 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
 
     tools:context="octobite.com.br.spriteview.MainActivity">
 
     <br.com.octobite.spritelib.SpriteView
         android:id="@+id/sprite_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="139dp"
+        android:layout_height="164dp"
         android:layout_centerHorizontal="true"
         android:layout_margin="10dp"
 
-        app:columns="4"
-        app:fps="8"
-        app:image="@drawable/sprite"
-        app:rows="4" />
-
-    <Button
-        android:id="@+id/start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/sprite_view"
-        android:layout_centerInParent="true"
-
-        android:onClick="startAnim"
-        android:text="Start" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/start"
-        android:layout_centerInParent="true"
-        android:onClick="stopAnim"
-        android:text="Stop" />
+        app:columns="5"
+        app:fps="10"
+        app:image="@drawable/animacoes_escotilha"
+        app:rows="5" />
 
 
     <LinearLayout
         android:id="@+id/menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_centerInParent="true"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="playLeftAnim"
-            android:text="Left" />
+            android:onClick="pegaRadio"
+            android:text="Pega Radio" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="playFrontAnim"
-            android:text="Front" />
+            android:onClick="guardaRadio"
+            android:text="Guarda Radio" />
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/menu2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/menu"
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="playBackAnim"
-            android:text="Back" />
+            android:onClick="playVitoria"
+            android:text="Vitoria" />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="playRightAnim"
-            android:text="Right" />
+            android:onClick="playDerrota"
+            android:text="Derrota" />
 
 
     </LinearLayout>
